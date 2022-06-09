@@ -4,7 +4,7 @@ param (
     [int]$spilt = 5
 )
 
-if ($pdf.Extension -ne '.pdf') {
+while ($pdf.Extension -ne '.pdf') {
     $pdf = Read-Host 'pdf path'
 }
 
