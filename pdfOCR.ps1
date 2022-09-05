@@ -4,6 +4,8 @@ param (
     [int]$spilt = 5
 )
 
+$ErrorActionPreference = "Stop"
+
 while ($pdf.Extension -ne '.pdf') {
     $pdf = Read-Host 'pdf path'
 }
