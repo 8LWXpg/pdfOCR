@@ -38,5 +38,5 @@ for ($i = 0; $i -lt $spilt; $i++) {
 }
 pdftk $pdfs cat output "$TempFolder\out1.pdf"
 pdftk "$TempFolder\out1.pdf" multibackground $pdf output "$TempFolder\out2.pdf"
-pdftk $pdf dump_data_utf8 output - | pdftk.exe "$TempFolder\out2.pdf" update_info_utf8 - output "$($pdf.Remove($pdf.Length - 4))_OCR.pdf"
+pdftk $pdf dump_data_utf8 output - | pdftk.exe "$TempFolder\out2.pdf" update_info_utf8 - output "$($pdf.FullName.Remove($pdf.FullName.Length - 4))_OCR.pdf"
 Remove-Item $TempFolder -Force -Recurse
