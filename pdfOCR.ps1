@@ -11,6 +11,7 @@ while ($pdf.Extension -ne '.pdf') {
 # get pdf pages
 $pages = [Convert]::ToInt32( ((pdftk.exe $pdf dump_data_utf8 | Select-String 'NumberOfPages').ToString() -replace "[^0-9]", ''), 10)
 if (!$?) {
+    Write-Error 'error in pages'
     return
 }
 
