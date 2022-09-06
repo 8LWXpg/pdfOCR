@@ -4,8 +4,6 @@ param (
     [int]$spilt = 5
 )
 
-$ErrorActionPreference = "Stop"
-
 while ($pdf.Extension -ne '.pdf') {
     $pdf = Read-Host 'pdf path'
 }
@@ -16,7 +14,7 @@ if (!$?) {
     return
 }
 
-$TempFolder = "$env:temp\pdfOCR"
+$TempFolder = "$($pdf.DirectoryName)\.temp_pdfOCR"
 mkdir $TempFolder -Force | Out-Null
 
 # change $spilt in case $pages < $spilt
