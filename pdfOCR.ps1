@@ -25,7 +25,7 @@ $spilt = $spilt -gt $pages ? $pages : $spilt
     $a = ([math]::Round($using:pages / $using:spilt * $_) + 1).ToString()
     $b = [math]::Round($using:pages / $using:spilt * ($_ + 1)).ToString()
     "converting to tiff $_"
-    gswin64c -q -dNOPAUSE -sDEVICE=tiffg4 "-dFirstPage=$a" "-dLastPage=$b" "-sOutputFile=$tiff" -r300 $using:pdf -c quit
+    gswin64c -q -dNOPAUSE -sDEVICE=tiffg4 -dQUIET "-dFirstPage=$a" "-dLastPage=$b" "-sOutputFile=$tiff" -r300 $using:pdf -c quit
     "OCRing $_"
     tesseract $tiff "$using:TempFolder\$($_.ToString())" -l eng -c textonly_pdf=1 pdf | Out-Null
 }
