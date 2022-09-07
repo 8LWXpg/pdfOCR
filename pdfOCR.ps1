@@ -14,7 +14,7 @@ if (!$?) {
     return
 }
 
-$TempFolder = "$($pdf.DirectoryName)\.temp_pdfOCR"
+$TempFolder = "$($pdf.DirectoryName)\temp_pdfOCR"
 mkdir $TempFolder -Force | Out-Null
 
 # change $spilt in case $pages < $spilt
@@ -38,4 +38,6 @@ for ($i = 0; $i -lt $spilt; $i++) {
 pdftk $pdfs cat output "$TempFolder\out1.pdf"
 pdftk "$TempFolder\out1.pdf" multibackground $pdf output "$TempFolder\out2.pdf"
 pdftk $pdf dump_data_utf8 output - | pdftk.exe "$TempFolder\out2.pdf" update_info_utf8 - output "$($pdf.DirectoryName)\$($pdf.BaseName)_OCR.pdf"
-Remove-Item $TempFolder -Force -Recurse
+if ($?) {
+    Remove-Item $TempFolder -Force -Recurse
+}
