@@ -4,8 +4,9 @@ param (
 	[int]$spilt = 5
 )
 
-while ($pdf.Extension -ne '.pdf') {
-	$pdf = Read-Host 'pdf path'
+if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
+	Write-Error 'pdf not found' -Category OpenError
+	return
 }
 
 # get pdf pages
@@ -28,17 +29,21 @@ $spilt = $spilt -gt $pages ? $pages : $spilt
 	$a = [math]::Round($using:pages / $using:spilt * $_) + 1
 	$b = [math]::Round($using:pages / $using:spilt * ($_ + 1))
 	"OCRing $_"
-	gswin64c -dNOPAUSE -dQUIET -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-sOutputFile=$temp_pdf" "-dFirstPage=$a" "-dLastPage=$b" -r300 $using:pdf -c quit
+	gswin64c -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-dFirstPage=$a" "-dLastPage=$b" -r300 -o $temp_pdf $using:pdf
 }
 
 # merge pdf and add bookmark back
 $pdfs = @()
+[System.IO.FileInfo]$out_pdf = "$($pdf.DirectoryName)\$($pdf.BaseName)_OCR.pdf"
+if ($out_pdf.Exists) {
+	Remove-Item $out_pdf -Force
+}
 for ($i = 0; $i -lt $spilt; $i++) {
 	$pdfs += "$temp_folder\$i.pdf"
 }
 pdftk $pdfs cat output "$temp_folder\out1.pdf"
 pdftk "$temp_folder\out1.pdf" multibackground $pdf output "$temp_folder\out2.pdf"
-pdftk $pdf dump_data_utf8 output - | pdftk "$temp_folder\out2.pdf" update_info_utf8 - output "$($pdf.DirectoryName)\$($pdf.BaseName)_OCR.pdf"
+pdftk $pdf dump_data_utf8 output - | pdftk "$temp_folder\out2.pdf" update_info_utf8 - output $out_pdf
 if ($?) {
 	Remove-Item $temp_folder -Force -Recurse
 }
