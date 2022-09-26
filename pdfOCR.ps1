@@ -1,7 +1,7 @@
 param (
 	[Parameter(ValueFromPipeline = $true)]
 	[System.IO.FileInfo]$pdf,
-	[int]$spilt = 5
+	[int]$thread = 5
 )
 
 if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
@@ -21,29 +21,27 @@ if ($temp_folder.Exists) {
 }
 mkdir $temp_folder -Force | Out-Null
 
-# change $spilt in case $pages < $spilt
-$spilt = $spilt -gt $pages ? $pages : $spilt
-0..($spilt - 1) | ForEach-Object -Parallel {
+# change $thread in case $pages < $thread
+$thread = $thread -gt $pages ? $pages : $thread
+0..($thread - 1) | ForEach-Object -Parallel {
 	$temp_pdf = "$using:temp_folder\$_.pdf"
 	# spilt pdf
-	$a = [math]::Round($using:pages / $using:spilt * $_) + 1
-	$b = [math]::Round($using:pages / $using:spilt * ($_ + 1))
+	$a = [math]::Round($using:pages / $using:thread * $_) + 1
+	$b = [math]::Round($using:pages / $using:thread * ($_ + 1))
 	"OCRing $_"
 	gswin64c -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-dFirstPage=$a" "-dLastPage=$b" -r300 -o $temp_pdf $using:pdf
 }
 
 # merge pdf and add bookmark back
-$pdfs = @()
 [System.IO.FileInfo]$out_pdf = "$($pdf.DirectoryName)\$($pdf.BaseName)_OCR.pdf"
 if ($out_pdf.Exists) {
 	Remove-Item $out_pdf -Force
 }
-for ($i = 0; $i -lt $spilt; $i++) {
-	$pdfs += "$temp_folder\$i.pdf"
-}
-pdftk $pdfs cat output "$temp_folder\out1.pdf"
-pdftk "$temp_folder\out1.pdf" multibackground $pdf output "$temp_folder\out2.pdf"
-pdftk $pdf dump_data_utf8 output - | pdftk "$temp_folder\out2.pdf" update_info_utf8 - output $out_pdf
+$pdfs = @(for ($i = 0; $i -lt $thread; $i++) {
+		"$temp_folder\$i.pdf"
+	})
+pdftk $pdfs cat output "$temp_folder\out.pdf"
+pdftk $pdf dump_data_utf8 output - | pdftk "$temp_folder\out.pdf" update_info_utf8 - output $out_pdf
 if ($?) {
 	Remove-Item $temp_folder -Force -Recurse
 }
