@@ -1,11 +1,10 @@
 # pdfOCER
 
-Make pdf searchable via powershell command line
+Make pdf searchable with ghostscript, and use powershell for multithreading.
 
-## Requiremanets
+## Requirements
 
-- [ghostscript](https://www.ghostscript.com/)
-- [tesseract](https://github.com/tesseract-ocr/tesseract)
+- [ghostscript](https://www.ghostscript.com/), with Tesseract tessdata file at /bin/tessdata/eng.traineddata
 - [pdftk](https://www.pdflabs.com/tools/)
 
 All installed and added to the PATH
