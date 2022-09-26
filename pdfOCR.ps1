@@ -1,43 +1,47 @@
 param (
-    [Parameter(ValueFromPipeline = $true)]
-    [System.IO.FileInfo]$pdf,
-    [int]$spilt = 5
+	[Parameter(ValueFromPipeline = $true)]
+	[System.IO.FileInfo]$pdf,
+	[int]$thread = 5
 )
 
-while ($pdf.Extension -ne '.pdf') {
-    $pdf = Read-Host 'pdf path'
+if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
+	Write-Error 'pdf not found' -Category OpenError
+	return
 }
 
 # get pdf pages
-$pages = [Convert]::ToInt32( ((pdftk.exe $pdf dump_data_utf8 | Select-String 'NumberOfPages').ToString() -replace "[^0-9]", ''), 10)
+$pages = [Convert]::ToInt32(((pdftk $pdf dump_data_utf8 | Select-String 'NumberOfPages').ToString() -replace "[^0-9]", ''), 10)
 if (!$?) {
-    return
+	return
 }
 
-$TempFolder = "$($pdf.DirectoryName)\temp_pdfOCR"
-mkdir $TempFolder -Force | Out-Null
+[System.IO.FileInfo]$temp_folder = "$($pdf.DirectoryName)\temp_pdfOCR"
+if ($temp_folder.Exists) {
+	Remove-Item $temp_folder -Recurse -Force
+}
+mkdir $temp_folder -Force | Out-Null
 
-# change $spilt in case $pages < $spilt
-$spilt = $spilt -gt $pages ? $pages : $spilt
-0..($spilt - 1) | ForEach-Object -Parallel {
-    $tiff = "$using:TempFolder\$($_.ToString()).tiff"
-    # spilt pdf
-    $a = ([math]::Round($using:pages / $using:spilt * $_) + 1).ToString()
-    $b = [math]::Round($using:pages / $using:spilt * ($_ + 1)).ToString()
-    "converting to tiff $_"
-    gswin64c -q -dNOPAUSE -sDEVICE=tiffg4 -dQUIET "-dFirstPage=$a" "-dLastPage=$b" "-sOutputFile=$tiff" -r300 $using:pdf -c quit
-    "OCRing $_"
-    tesseract $tiff "$using:TempFolder\$($_.ToString())" -l eng -c textonly_pdf=1 pdf | Out-Null
+# change $thread in case $pages < $thread
+$thread = $thread -gt $pages ? $pages : $thread
+0..($thread - 1) | ForEach-Object -Parallel {
+	$temp_pdf = "$using:temp_folder\$_.pdf"
+	# spilt pdf
+	$a = [math]::Round($using:pages / $using:thread * $_) + 1
+	$b = [math]::Round($using:pages / $using:thread * ($_ + 1))
+	"OCRing $_"
+	gswin64c -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-dFirstPage=$a" "-dLastPage=$b" -r300 -o $temp_pdf $using:pdf
 }
 
 # merge pdf and add bookmark back
-$pdfs = @()
-for ($i = 0; $i -lt $spilt; $i++) {
-    $pdfs += "$TempFolder\$i.pdf"
+[System.IO.FileInfo]$out_pdf = "$($pdf.DirectoryName)\$($pdf.BaseName)_OCR.pdf"
+if ($out_pdf.Exists) {
+	Remove-Item $out_pdf -Force
 }
-pdftk $pdfs cat output "$TempFolder\out1.pdf"
-pdftk "$TempFolder\out1.pdf" multibackground $pdf output "$TempFolder\out2.pdf"
-pdftk $pdf dump_data_utf8 output - | pdftk.exe "$TempFolder\out2.pdf" update_info_utf8 - output "$($pdf.DirectoryName)\$($pdf.BaseName)_OCR.pdf"
+$pdfs = @(for ($i = 0; $i -lt $thread; $i++) {
+		"$temp_folder\$i.pdf"
+	})
+pdftk $pdfs cat output "$temp_folder\out.pdf"
+pdftk $pdf dump_data_utf8 output - | pdftk "$temp_folder\out.pdf" update_info_utf8 - output $out_pdf
 if ($?) {
-    Remove-Item $TempFolder -Force -Recurse
+	Remove-Item $temp_folder -Force -Recurse
 }
