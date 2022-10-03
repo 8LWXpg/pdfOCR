@@ -10,7 +10,7 @@ if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
 }
 
 # get pdf pages
-$pages = (pdftk $pdf dump_data | Select-String -Pattern 'NumberOfPages: (\d+)').Matches.Groups[1].Value.ToInt32($null) || return
+$pages = (pdftk $pdf dump_data | Select-String 'NumberOfPages: (\d+)').Matches.Groups[1].Value.ToInt32($null) || return
 
 [System.IO.FileInfo]$temp_folder = "$($pdf.DirectoryName)\temp_pdfOCR"
 if ($temp_folder.Exists) {
