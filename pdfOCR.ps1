@@ -10,10 +10,7 @@ if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
 }
 
 # get pdf pages
-$pages = [Convert]::ToInt32(((pdftk $pdf dump_data_utf8 | Select-String 'NumberOfPages').ToString() -replace "[^0-9]", ''), 10)
-if (!$?) {
-	return
-}
+$pages = (pdftk $pdf dump_data | Select-String -Pattern 'NumberOfPages: (\d+)').Matches.Groups[1].Value.ToInt32($null) || return
 
 [System.IO.FileInfo]$temp_folder = "$($pdf.DirectoryName)\temp_pdfOCR"
 if ($temp_folder.Exists) {
@@ -29,7 +26,7 @@ $thread = $thread -gt $pages ? $pages : $thread
 	$a = [math]::Round($using:pages / $using:thread * $_) + 1
 	$b = [math]::Round($using:pages / $using:thread * ($_ + 1))
 	"OCRing $_"
-	gswin64c -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-dFirstPage=$a" "-dLastPage=$b" -r300 -o $temp_pdf $using:pdf
+	gswin64c -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-dFirstPage=$a" "-dLastPage=$b" -r300 -o $temp_pdf $using:pdf || return
 }
 
 # merge pdf and add bookmark back
@@ -41,7 +38,6 @@ $pdfs = @(for ($i = 0; $i -lt $thread; $i++) {
 		"$temp_folder\$i.pdf"
 	})
 pdftk $pdfs cat output "$temp_folder\out.pdf"
-pdftk $pdf dump_data_utf8 output - | pdftk "$temp_folder\out.pdf" update_info_utf8 - output $out_pdf
-if ($?) {
+pdftk $pdf dump_data_utf8 output - |
+	pdftk "$temp_folder\out.pdf" update_info_utf8 - output $out_pdf && `
 	Remove-Item $temp_folder -Force -Recurse
-}
