@@ -1,8 +1,10 @@
 param (
-	[Parameter(ValueFromPipeline = $true)]
-	[System.IO.FileInfo]$pdf,
+	[Parameter(ValueFromPipeline = $true, Mandatory)]
+	[string]$pdf,
 	[int]$thread = 5
 )
+[System.IO.Directory]::SetCurrentDirectory($PWD)
+[System.IO.FileInfo]$pdf = $pdf
 
 if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
 	Write-Error 'pdf not found' -Category OpenError
