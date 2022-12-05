@@ -3,8 +3,7 @@ param (
 	[string]$pdf,
 	[int]$thread = 5
 )
-[System.IO.Directory]::SetCurrentDirectory($PWD)
-[System.IO.FileInfo]$pdf = $pdf
+[System.IO.FileInfo]$pdf = (Resolve-Path $pdf).Path
 
 if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
 	Write-Error 'pdf not found' -Category OpenError
