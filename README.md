@@ -1,6 +1,6 @@
 # pdfOCER
 
-Make pdf searchable with ghostscript, and use powershell for multithreading.
+A wrapper of ghostscript, use powershell for multithreading.
 
 ## Requirements
 
