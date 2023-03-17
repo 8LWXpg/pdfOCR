@@ -1,4 +1,4 @@
-# pdfOCER
+# pdfOCR
 
 A wrapper of ghostscript, use powershell for multithreading.
 
