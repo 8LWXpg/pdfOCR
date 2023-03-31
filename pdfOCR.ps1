@@ -7,11 +7,14 @@ param (
 
 if (!$pdf.Exists -or $pdf.Extension -ne '.pdf') {
 	Write-Error 'pdf not found' -Category OpenError
-	return
+	exit
 }
 
 # get pdf pages
-$pages = (pdftk $pdf dump_data | Select-String 'NumberOfPages: (\d+)').Matches.Groups[1].Value.ToInt32($null) || return
+$pages = (pdftk $pdf dump_data | Select-String 'NumberOfPages: (\d+)').Matches.Groups[1].Value.ToInt32($null)
+if (!$pages) {
+	exit
+}
 
 [System.IO.FileInfo]$temp_folder = "$($pdf.DirectoryName)\temp_pdfOCR"
 if ($temp_folder.Exists) {
@@ -26,8 +29,11 @@ $thread = $thread -gt $pages ? $pages : $thread
 	# spilt pdf
 	$a = [math]::Round($using:pages / $using:thread * $_) + 1
 	$b = [math]::Round($using:pages / $using:thread * ($_ + 1))
-	"OCRing $_"
-	gswin64c -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-dFirstPage=$a" "-dLastPage=$b" -r300 -o $temp_pdf $using:pdf || return
+	"OCR $_"
+	gswin64c -q -sDEVICE=pdfocr24 -sOCRLanguage=eng "-dFirstPage=$a" "-dLastPage=$b" -r300 -o $temp_pdf $using:pdf
+	if (!$?) {
+		exit
+	}
 }
 
 # merge pdf and add bookmark back
