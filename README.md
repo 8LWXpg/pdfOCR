@@ -11,4 +11,6 @@ All installed and added to the PATH
 
 ## Usage
 
-> `ps> pdfOCR.ps1 <pdf> [<parallel threads>]`
+```
+ps> pdfOCR.ps1 <pdf> [<parallel threads>]
+```
